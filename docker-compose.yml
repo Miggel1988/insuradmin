@@ -1,0 +1,107 @@
+---
+version: '2'
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+    - 2181:2181
+  kafka:
+    # "`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-
+    # An important note about accessing Kafka from clients on other machines:
+    # -----------------------------------------------------------------------
+    #
+    # The config used here exposes port 9092 for _external_ connections to the broker
+    # i.e. those from _outside_ the docker network. This could be from the host machine
+    # running docker, or maybe further afield if you've got a more complicated setup.
+    # If the latter is true, you will need to change the value 'localhost' in
+    # KAFKA_ADVERTISED_LISTENERS to one that is resolvable to the docker host from those
+    # remote clients
+    #
+    # For connections _internal_ to the docker network, such as from other services
+    # and components, use kafka:29092.
+    #
+    # See https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
+    # "`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-
+    #
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - 9092:9092
+      - 29092:29092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      
+  kafka-setup:
+    image: confluentinc/cp-kafka:latest
+    hostname: kafka-setup
+    container_name: kafka-setup
+    depends_on:
+      - kafka
+    command: "bash -c 'echo Waiting for Kafka to be ready... && \
+                       sleep 50 && \
+                       kafka-topics --create --if-not-exists --zookeeper zookeeper:2181 --partitions 2 --replication-factor 1 --topic police.in && \
+                       kafka-topics --create --if-not-exists --zookeeper zookeeper:2181 --partitions 2 --replication-factor 1 --topic customer.in && \
+                       kafka-topics --create --if-not-exists --zookeeper zookeeper:2181 --partitions 2 --replication-factor 1 --topic police.out && \
+                       kafka-topics --create --if-not-exists --zookeeper zookeeper:2181 --partitions 2 --replication-factor 1 --topic customer.out && \
+                       kafka-topics --create --if-not-exists --zookeeper zookeeper:2181 --partitions 2 --replication-factor 1 --topic refresh'"
+    environment:
+      # The following settings are listed here only to satisfy the image's requirements.
+      # We override the image's `command` anyways, hence this container will not start a broker.
+      KAFKA_BROKER_ID: ignored
+      KAFKA_ZOOKEEPER_CONNECT: ignored
+  
+
+  dispatcher-service:
+    image: insuradmin/dispatcher-service:1.0.1
+    depends_on:
+      - kafka
+    ports:
+      - 8080:8080
+    environment:
+      QUARKUS_MONGODB_CONNECTION_STRING: mongodb://mongodb1:27017
+      KAFKA_CONNECT: kafka:29092  
+      
+  customer-service:
+    image: insuradmin/customer-service:1.0.1
+    depends_on:
+      - kafka
+    ports:
+      - 8081:8081
+    environment:
+      QUARKUS_MONGODB_CONNECTION_STRING: mongodb://mongodb1:27017
+      KAFKA_CONNECT: kafka:29092
+      
+  police-service:
+    image: insuradmin/police-service:1.0.1
+    depends_on:
+      - kafka
+    ports:
+      - 8082:8082
+    environment:
+      QUARKUS_MONGODB_CONNECTION_STRING: mongodb://mongodb1:27017
+      KAFKA_CONNECT: kafka:29092
+
+  mongodb1:
+    image: mongo:4.2.8
+    ports:
+      - 27005:27017
+      - 27006:27018
+      - 27007:27019
+
+  frontend:
+    image: insuradmin/frontend:1.0.1
+    depends_on:
+      - kafka
+    ports:
+      - 4200:4200
+      
+      

@@ -1,0 +1,11 @@
+.pointer{
+    cursor: pointer;
+}
+
+.highlight{
+    font-weight: bold;
+}
+
+.btn{
+    margin-bottom: 10px;
+}

@@ -1,0 +1,32 @@
+<noscript>
+    <h2 style="color: #ff0000">
+        Dein Browser unterstützt kein Javascript! Diese Anwendung
+        funktioniert mit Websockets, die aktiviertes Javascript benötigen.
+        Bitte aktiviere Javascript und lade die Seite neu.</h2>
+</noscript>
+
+
+<div id="main-content" class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <h3>Kunden</h3>
+            <ul>
+                <li [ngClass]="sessionService.selectedCustomerID == customer.customID?'highlight pointer':'pointer'" *ngFor="let customer of sessionService.customers" (click)="selectCustomer(customer?.customID)">
+                    <!--  <a [routerLink]="['/customer',customer.id]">{{customer?.name}}</a>-->
+                    <p>{{customer?.name}}</p> 
+                    <p class="small">ID: {{customer?.customID}}</p>
+                </li>
+            </ul>
+        </div>
+        <div class="col-md-6" *ngIf="sessionService.selectedCustomerID">
+            <h3>Policen</h3>
+            <button (click)="createPolice()" class="btn btn-default" type="submit">Hinzufügen (Zufallsprinzip für Walking Skeleton)</button>
+            <ul>
+                <li *ngFor="let police of sessionService.polices[sessionService.selectedCustomerID]">
+                    <p class="highlight">{{police?.name}} | <span class="small">ID: {{police?.customID}}</span></p>
+                    <button (click)="deletePolice(police.customID)" class="btn btn-default" type="submit">Löschen</button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
