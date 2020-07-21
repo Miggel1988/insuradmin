@@ -1,6 +1,8 @@
-# Angular8SpringbootWebsocket
+# InsurAdmin - Frontend
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 8.0.1.
+It is the frontend of "InsurAdmin", which communicates via Websockets with the backend - Template was reused from project: [https://github.com/RameshMF/angular8-springboot-websocket](https://github.com/RameshMF/angular8-springboot-websocket).
+
 
 ## Development server
 
